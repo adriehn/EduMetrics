@@ -6,7 +6,6 @@ const router = Router();
 
 // Todas las rutas de este archivo pasan primero por el middleware de autenticación
 router.use(verificarToken);
-
 router.get('/', getCarreras);
 router.post('/', createCarrera);
 
