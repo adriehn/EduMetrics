@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes.js';
 import carrerasRoutes from './routes/carreras.routes.js';
+import consultasRoutes from './routes/consultas.routes.js';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/carreras', carrerasRoutes);
+app.use('/api/consultas', consultasRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', app: 'EduMetrics' });
