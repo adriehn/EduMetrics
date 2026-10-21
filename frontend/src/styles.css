@@ -1,1 +1,39 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  /* Paleta EduMetrics */
+  --color-primary-navy: #0f2d59;     /* Azul marino oscuro institucional */
+  --color-primary-blue: #1565c0;     /* Azul intermedio */
+  --color-accent-teal: #10b981;      /* Verde agua / Teal principal */
+  --color-accent-teal-dark: #059669; /* Verde agua hover */
+  --color-accent-teal-light: #e6fffa;/* Fondo suave verde agua */
+
+  /* Neutros */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  /* Estados */
+  --color-danger: #ef4444;
+  --color-danger-bg: #fee2e2;
+
+  /* UI Tokens */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  min-height: 100vh;
+}

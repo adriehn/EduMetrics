@@ -1,0 +1,29 @@
+<header class="navbar">
+  <div class="nav-container">
+    <a routerLink="/" class="nav-brand">
+      <img src="/logo.png" alt="EduMetrics" class="brand-logo" />
+      <span class="brand-name">Edu<span class="brand-accent">Metrics</span></span>
+    </a>
+
+    @if (authService.currentUser()) {
+      <nav class="nav-links">
+        <a routerLink="/carreras" routerLinkActive="active">Carreras</a>
+        <a routerLink="/consultas" routerLinkActive="active">Consultas</a>
+        <a routerLink="/estadisticas" routerLinkActive="active">Estadísticas</a>
+      </nav>
+    }
+
+    <div class="nav-actions">
+      @if (!authService.currentUser()) {
+        <a routerLink="/login" class="btn btn-login">Iniciar Sesión</a>
+        <a routerLink="/registro" class="btn btn-register">Registrarse</a>
+      } @else {
+        <div class="user-badge">
+          <span class="user-icon">🏛️</span>
+          <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
+        </div>
+        <button (click)="authService.logout()" class="btn btn-logout">Cerrar Sesión</button>
+      }
+    </div>
+  </div>
+</header>

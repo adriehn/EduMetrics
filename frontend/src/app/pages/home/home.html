@@ -1,0 +1,47 @@
+<section class="hero-section">
+  <div class="hero-content">
+    <span class="badge">Gestión y Analítica Académica</span>
+    <h1>Centralizá la demanda y métricas de tus carreras</h1>
+    <p class="hero-description">
+      EduMetrics permite a instituciones educativas gestionar su oferta académica, 
+      registrar consultas de futuros ingresantes por múltiples canales y analizar tendencias en tiempo real.
+    </p>
+
+    <div class="hero-actions">
+      @if (!authService.currentUser()) {
+        <a routerLink="/registro" class="btn btn-primary">Comenzar Gratis</a>
+        <a routerLink="/login" class="btn btn-outline">Ingresar al Panel</a>
+      } @else {
+        <a routerLink="/carreras" class="btn btn-primary">Ir a mis Carreras</a>
+        <a routerLink="/consultas" class="btn btn-outline">Ver Consultas</a>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="features-section">
+  <div class="section-header">
+    <h2>Todo lo que necesitás en un solo lugar</h2>
+    <p>Diseñado para simplificar el seguimiento de admisiones y la toma de decisiones.</p>
+  </div>
+
+  <div class="features-grid">
+    <article class="feature-card">
+      <div class="feature-icon">📚</div>
+      <h3>Gestión de Carreras</h3>
+      <p>Administrá el catálogo académico de tu institución, configurá códigos, títulos y estados de forma ágil.</p>
+    </article>
+
+    <article class="feature-card">
+      <div class="feature-icon">💬</div>
+      <h3>Registro Multicanal</h3>
+      <p>Centralizá las consultas recibidas por WhatsApp, correo web o de forma presencial sin perder ningún interesado.</p>
+    </article>
+
+    <article class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Métricas y Estadísticas</h3>
+      <p>Evaluá qué carreras tienen mayor demanda, cuál es la tasa de conversión y qué canal de captación rinde mejor.</p>
+    </article>
+  </div>
+</section>
