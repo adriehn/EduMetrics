@@ -8,12 +8,11 @@
   </header>
 
   <!-- Barra de Filtros y Búsqueda -->
-  <!-- Barra de Filtros y Búsqueda -->
   <div class="toolbar-filtros">
     <div class="search-input-wrapper">
       <span class="search-icon">🔍</span>
       <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
-        placeholder="Buscar por nombre, teléfono, email o carrera..." class="input-search" />
+        placeholder="Buscar por Ticket, nombre, teléfono, email o carrera..." class="input-search" />
     </div>
 
     <div class="date-range-wrapper">
@@ -61,7 +60,15 @@
     <table class="consultas-table">
       <thead>
         <tr>
-          <th class="th-sortable" (click)="toggleSort('nombre_interesado')">
+          <th class="th-sortable col-ticket" (click)="toggleSort('codigo_ticket')">
+            <div class="th-content">
+              <span>Ticket</span>
+              <span class="sort-indicator">
+                {{ sortColumn() === 'codigo_ticket' ? (sortDirection() === 'asc' ? '▲' : '▼') : '⇅' }}
+              </span>
+            </div>
+          </th>
+          <th class="th-sortable col-interesado" (click)="toggleSort('nombre_interesado')">
             <div class="th-content">
               <span>Interesado</span>
               <span class="sort-indicator">
@@ -69,7 +76,7 @@
               </span>
             </div>
           </th>
-          <th class="th-sortable" (click)="toggleSort('carrera')">
+          <th class="th-sortable col-carrera" (click)="toggleSort('carrera')">
             <div class="th-content">
               <span>Carrera de Interés</span>
               <span class="sort-indicator">
@@ -77,7 +84,7 @@
               </span>
             </div>
           </th>
-          <th class="th-sortable" (click)="toggleSort('canal')">
+          <th class="th-sortable col-canal" (click)="toggleSort('canal')">
             <div class="th-content">
               <span>Canal</span>
               <span class="sort-indicator">
@@ -85,8 +92,9 @@
               </span>
             </div>
           </th>
-          <th>Contacto</th>
-          <th class="th-sortable" (click)="toggleSort('creado_en')">
+          <th class="col-contacto">Contacto</th>
+          <th class="col-obs">Obs.</th>
+          <th class="th-sortable col-fecha" (click)="toggleSort('creado_en')">
             <div class="th-content">
               <span>Fecha</span>
               <span class="sort-indicator">
@@ -94,25 +102,25 @@
               </span>
             </div>
           </th>
-          <th>Estado</th>
+          <th class="col-estado">Estado</th>
         </tr>
       </thead>
       <tbody>
         @for (c of consultasFiltradas(); track c.id) {
         <tr>
-          <td>
-            <div class="interesado-info">
-              <strong>{{ c.nombre_interesado }}</strong>
-              @if (c.notas) {
-              <small class="notas-hint">{{ c.notas }}</small>
-              }
-            </div>
+          <td class="col-ticket">
+            <span class="badge-ticket">{{ c.codigo_ticket || 'S/N' }}</span>
           </td>
-          <td>{{ c.carreras?.nombre || obtenerNombreCarrera(c.carrera_id) }}</td>
-          <td>
+          <td class="col-interesado">
+            <strong class="nombre-text">{{ c.nombre_interesado }}</strong>
+          </td>
+          <td class="col-carrera">
+            <span class="carrera-text">{{ c.carreras?.nombre || obtenerNombreCarrera(c.carrera_id) }}</span>
+          </td>
+          <td class="col-canal">
             <span class="badge-canal canal-{{ c.canal }}">{{ c.canal }}</span>
           </td>
-          <td class="contacto-cell">
+          <td class="col-contacto">
             <div class="contacto-wrapper">
               @if (c.telefono) {
               <div class="contacto-item">
@@ -131,10 +139,19 @@
               }
             </div>
           </td>
-          <td>
+          <td class="col-obs">
+            @if (c.notas) {
+            <button type="button" class="btn-obs" (click)="abrirNotasModal(c)" title="Ver observación">
+              📝 Ver nota
+            </button>
+            } @else {
+            <span class="text-muted">-</span>
+            }
+          </td>
+          <td class="col-fecha">
             {{ c.creado_en | date:'dd/MM/yyyy' }}
           </td>
-          <td>
+          <td class="col-estado">
             <select class="badge-estado estado-{{ c.estado || 'pendiente' }}" [value]="c.estado || 'pendiente'"
               (change)="actualizarEstado(c, $event)">
               <option value="pendiente">Pendiente</option>
@@ -150,10 +167,34 @@
   </div>
   }
 
+  <!-- Modal Ver Observación -->
+  @if (consultaSeleccionadaNotas()) {
+  <div class="modal-backdrop" (click)="cerrarNotasModal()">
+    <div class="modal-card modal-obs-card" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h2>Observación de la Consulta</h2>
+          <span class="badge-ticket">{{ consultaSeleccionadaNotas()?.codigo_ticket }}</span>
+          <span class="obs-subtitle">{{ consultaSeleccionadaNotas()?.nombre_interesado }}</span>
+        </div>
+        <button type="button" class="btn-close" (click)="cerrarNotasModal()">✕</button>
+      </header>
+
+      <div class="obs-body">
+        <p>{{ consultaSeleccionadaNotas()?.notas }}</p>
+      </div>
+
+      <footer class="modal-actions">
+        <button type="button" class="btn-submit" (click)="cerrarNotasModal()">Entendido</button>
+      </footer>
+    </div>
+  </div>
+  }
+
   <!-- Modal Registrar Consulta -->
   @if (mostrarModal()) {
   <div class="modal-backdrop" (click)="cerrarModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-form-card" (click)="$event.stopPropagation()">
       <header class="modal-header">
         <h2>Registrar Nueva Consulta</h2>
         <button type="button" class="btn-close" (click)="cerrarModal()">✕</button>
@@ -173,20 +214,20 @@
           }
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="carrera_id">Carrera de Consulta *</label>
-            <select id="carrera_id" formControlName="carrera_id">
-              <option value="" disabled>Seleccioná una carrera</option>
-              @for (carrera of carrerasService.carreras(); track carrera.id) {
-              <option [value]="carrera.id">{{ carrera.nombre }}</option>
-              }
-            </select>
-            @if (form.get('carrera_id')?.touched && form.get('carrera_id')?.hasError('required')) {
-            <small class="error-text">Seleccioná una carrera.</small>
+        <div class="form-group">
+          <label for="carrera_id">Carrera de Consulta *</label>
+          <select id="carrera_id" formControlName="carrera_id">
+            <option value="" disabled>Seleccioná una carrera</option>
+            @for (carrera of carrerasService.carreras(); track carrera.id) {
+            <option [value]="carrera.id">{{ carrera.nombre }}</option>
             }
-          </div>
+          </select>
+          @if (form.get('carrera_id')?.touched && form.get('carrera_id')?.hasError('required')) {
+          <small class="error-text">Seleccioná una carrera.</small>
+          }
+        </div>
 
+        <div class="form-row">
           <div class="form-group">
             <label for="canal">Canal de Ingreso *</label>
             <select id="canal" formControlName="canal">
@@ -194,6 +235,16 @@
               <option value="web">Formulario Web</option>
               <option value="presencial">Presencial / Mesa de entrada</option>
               <option value="correo">Correo Electrónico</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="estado">Estado Inicial *</label>
+            <select id="estado" formControlName="estado">
+              <option value="pendiente">Pendiente</option>
+              <option value="contactado">Contactado</option>
+              <option value="inscripto">Inscripto</option>
+              <option value="descartado">Descartado</option>
             </select>
           </div>
         </div>

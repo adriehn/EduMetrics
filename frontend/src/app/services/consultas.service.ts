@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 
 export interface Consulta {
   id: string;
+  codigo_ticket?: string | null;
   institucion_id: string;
   carrera_id: string;
   nombre_interesado: string;
@@ -54,12 +55,14 @@ export class ConsultasService {
   }
 
   crearConsulta(payload: CrearConsultaPayload) {
-    return this.http.post<{ message: string; consulta: Consulta }>(this.apiUrl, payload).pipe(
+    return this.http.post<any>(this.apiUrl, payload).pipe(
       tap((res) => {
-        this.consultas.update((list) => [res.consulta, ...list]);
+        const nueva: Consulta = res.consulta ? res.consulta : res;
+        this.consultas.update((list) => [nueva, ...list]);
       })
     );
   }
+
   cambiarEstado(id: string, nuevoEstado: string) {
     return this.http.patch<Consulta>(`${this.apiUrl}/${id}/estado`, { estado: nuevoEstado }).pipe(
       tap((actualizada) => {
@@ -68,5 +71,16 @@ export class ConsultasService {
         );
       })
     );
+  }
+
+  obtenerNotasPendientes(busqueda: string = '') {
+    const url = busqueda.trim()
+      ? `${this.apiUrl}/notas?busqueda=${encodeURIComponent(busqueda.trim())}`
+      : `${this.apiUrl}/notas`;
+    return this.http.get<Consulta[]>(url);
+  }
+
+  actualizarResolucion(id: string, payload: { estado?: string; notas?: string }) {
+    return this.http.patch<Consulta>(`${this.apiUrl}/${id}/resolver`, payload);
   }
 }

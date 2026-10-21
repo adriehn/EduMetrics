@@ -1,0 +1,85 @@
+<div class="notas-container">
+  <header class="section-header">
+    <div>
+      <h1>Planilla de Consultas Pendientes</h1>
+      <p class="subtitle">Bitácora de dudas y temas a resolver entre turnos de guardia</p>
+    </div>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        placeholder="Buscar por ID (ej: EDM-1001) o nombre..." 
+        [value]="terminoBusqueda()" 
+        (input)="onBuscar($event)"
+      />
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Buscando consultas en libro de guardia...</p>
+    </div>
+  } @else if (pendientes().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">✅</div>
+      <h3>Todo al día</h3>
+      <p>No hay consultas pendientes por resolver en el turno.</p>
+    </div>
+  } @else {
+    <div class="sheet-wrapper">
+      <table class="sheet-table">
+        <thead>
+          <tr>
+            <th class="col-ticket">ID Ticket</th>
+            <th class="col-estudiante">Estudiante / Interesado</th>
+            <th class="col-carrera">Carrera</th>
+            <th class="col-contacto">Contacto</th>
+            <th class="col-observacion">Observación / Asunto a resolver (Editable)</th>
+            <th class="col-acciones">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of pendientes(); track c.id) {
+            <tr>
+              <td class="col-ticket">
+                <span class="badge-ticket">{{ c.codigo_ticket || 'S/N' }}</span>
+              </td>
+              <td class="col-estudiante">
+                <strong>{{ c.nombre_interesado }}</strong>
+                <span class="tag-canal">{{ c.canal }}</span>
+              </td>
+              <td class="col-carrera">{{ c.carreras?.nombre || '-' }}</td>
+              <td class="col-contacto">
+                @if (c.telefono) {
+                  <button class="btn-wa" (click)="abrirWhatsApp(c.telefono)" title="Abrir WhatsApp">
+                    💬 {{ c.telefono }}
+                  </button>
+                }
+                @if (c.email) {
+                  <small class="email-text">✉️ {{ c.email }}</small>
+                }
+                @if (!c.telefono && !c.email) {
+                  <span class="sin-datos">Sin contacto directo</span>
+                }
+              </td>
+              <td 
+                class="col-observacion cell-editable" 
+                contenteditable="true" 
+                (blur)="guardarNotaInline(c, $event)"
+                title="Hacé clic para editar la nota directamente">
+                {{ c.notas || 'Hacé clic para escribir una observación de turno...' }}
+              </td>
+              <td class="col-acciones">
+                <button class="btn-resolver" (click)="marcarResuelta(c)" title="Dar por resuelta y archivar del turno">
+                  ✓ Resolver
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

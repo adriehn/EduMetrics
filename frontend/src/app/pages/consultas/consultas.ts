@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angu
 import { ConsultasService, CrearConsultaPayload, Consulta } from '../../services/consultas.service';
 import { CarrerasService } from '../../services/carreras.service';
 
-type SortColumn = 'nombre_interesado' | 'carrera' | 'canal' | 'creado_en';
+type SortColumn = 'codigo_ticket' | 'nombre_interesado' | 'carrera' | 'canal' | 'creado_en';
 type SortDirection = 'asc' | 'desc';
 
 @Component({
@@ -23,14 +23,16 @@ export class Consultas implements OnInit {
   isSubmitting = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
 
+  // Modal para ver observación completa
+  consultaSeleccionadaNotas = signal<Consulta | null>(null);
+
   // Señales para filtros y orden
   searchTerm = signal<string>('');
-  fechaDesde = signal<string>(''); // formato YYYY-MM-DD
-  fechaHasta = signal<string>(''); // formato YYYY-MM-DD
+  fechaDesde = signal<string>('');
+  fechaHasta = signal<string>('');
   sortColumn = signal<SortColumn>('creado_en');
   sortDirection = signal<SortDirection>('desc');
 
-  // Signal computado: aplica filtros y ordenamiento en tiempo real
   consultasFiltradas = computed(() => {
     let list = [...this.consultasService.consultas()];
     const search = this.searchTerm().toLowerCase().trim();
@@ -39,9 +41,9 @@ export class Consultas implements OnInit {
     const col = this.sortColumn();
     const dir = this.sortDirection();
 
-    // 1. Filtro por texto (Nombre, Teléfono, Email o Carrera)
     if (search) {
       list = list.filter((c) => {
+        const ticket = c.codigo_ticket?.toLowerCase() || '';
         const nombre = c.nombre_interesado?.toLowerCase() || '';
         const tel = c.telefono?.toLowerCase() || '';
         const email = c.email?.toLowerCase() || '';
@@ -49,6 +51,7 @@ export class Consultas implements OnInit {
         const canal = c.canal?.toLowerCase() || '';
 
         return (
+          ticket.includes(search) ||
           nombre.includes(search) ||
           tel.includes(search) ||
           email.includes(search) ||
@@ -57,31 +60,28 @@ export class Consultas implements OnInit {
         );
       });
     }
-    // 2. Filtro por fecha (compara día YYYY-MM-DD)
+
     if (desde || hasta) {
       list = list.filter((c) => {
         const fechaConsulta = c.creado_en ? c.creado_en.substring(0, 10) : '';
         if (!fechaConsulta) return false;
 
-        if (desde && hasta) {
-          return fechaConsulta >= desde && fechaConsulta <= hasta;
-        }
-        if (desde) {
-          return fechaConsulta >= desde;
-        }
-        if (hasta) {
-          return fechaConsulta <= hasta;
-        }
+        if (desde && hasta) return fechaConsulta >= desde && fechaConsulta <= hasta;
+        if (desde) return fechaConsulta >= desde;
+        if (hasta) return fechaConsulta <= hasta;
         return true;
       });
     }
 
-    // 3. Ordenamiento
     list.sort((a, b) => {
       let valA = '';
       let valB = '';
 
       switch (col) {
+        case 'codigo_ticket':
+          valA = a.codigo_ticket || '';
+          valB = b.codigo_ticket || '';
+          break;
         case 'nombre_interesado':
           valA = a.nombre_interesado || '';
           valB = b.nombre_interesado || '';
@@ -100,7 +100,7 @@ export class Consultas implements OnInit {
           break;
       }
 
-      const comparison = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
+      const comparison = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
       return dir === 'asc' ? comparison : -comparison;
     });
 
@@ -111,6 +111,7 @@ export class Consultas implements OnInit {
     nombre_interesado: ['', [Validators.required, Validators.minLength(3)]],
     carrera_id: ['', [Validators.required]],
     canal: ['whatsapp', [Validators.required]],
+    estado: ['pendiente', [Validators.required]],
     telefono: [''],
     email: ['', [Validators.email]],
     notas: ['']
@@ -127,7 +128,6 @@ export class Consultas implements OnInit {
     }
   }
 
-  // Alterna o asigna el orden por columna
   toggleSort(column: SortColumn) {
     if (this.sortColumn() === column) {
       this.sortDirection.update((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -142,11 +142,13 @@ export class Consultas implements OnInit {
     this.fechaDesde.set('');
     this.fechaHasta.set('');
   }
+
   abrirModal() {
     this.form.reset({
       nombre_interesado: '',
       canal: 'whatsapp',
       carrera_id: this.carrerasService.carreras()[0]?.id || '',
+      estado: 'pendiente',
       telefono: '',
       email: '',
       notas: ''
@@ -159,6 +161,14 @@ export class Consultas implements OnInit {
     this.mostrarModal.set(false);
   }
 
+  abrirNotasModal(consulta: Consulta) {
+    this.consultaSeleccionadaNotas.set(consulta);
+  }
+
+  cerrarNotasModal() {
+    this.consultaSeleccionadaNotas.set(null);
+  }
+
   guardarConsulta() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -169,19 +179,21 @@ export class Consultas implements OnInit {
     this.errorMessage.set(null);
 
     const raw = this.form.getRawValue();
-    const payload: CrearConsultaPayload = {
+    const payload: CrearConsultaPayload & { estado?: string } = {
       nombre_interesado: raw.nombre_interesado!.trim(),
       carrera_id: raw.carrera_id!,
       canal: raw.canal!,
       telefono: raw.telefono ? raw.telefono.trim() : null,
       email: raw.email ? raw.email.trim() : null,
-      notas: raw.notas ? raw.notas.trim() : null
+      notas: raw.notas ? raw.notas.trim() : null,
+      estado: raw.estado || 'pendiente'
     };
 
     this.consultasService.crearConsulta(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.cerrarModal();
+        this.consultasService.obtenerConsultas().subscribe();
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -195,7 +207,6 @@ export class Consultas implements OnInit {
     return encontrada ? encontrada.nombre : 'Carrera vinculada';
   }
 
-
   actualizarEstado(consulta: Consulta, event: Event) {
     const select = event.target as HTMLSelectElement;
     const nuevoEstado = select.value;
@@ -203,7 +214,6 @@ export class Consultas implements OnInit {
     this.consultasService.cambiarEstado(consulta.id, nuevoEstado).subscribe({
       error: (err) => {
         console.error('Error al actualizar estado:', err);
-        // Revertir el valor en la UI si falla
         select.value = consulta.estado || 'pendiente';
       }
     });
