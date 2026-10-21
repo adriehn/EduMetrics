@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { getCarreras, createCarrera } from '../controllers/carreras.controller.js';
+import { getCarreras, createCarrera, toggleEstadoCarrera } from '../controllers/carreras.controller.js';
 import { verificarToken } from '../middlewares/auth.middleware.js';
+import { updateCarrera } from '../controllers/carreras.controller.js';
 
 const router = Router();
 
@@ -8,5 +9,7 @@ const router = Router();
 router.use(verificarToken);
 router.get('/', getCarreras);
 router.post('/', createCarrera);
+router.patch('/:id/estado', toggleEstadoCarrera);
 
+router.put('/:id', updateCarrera);
 export default router;

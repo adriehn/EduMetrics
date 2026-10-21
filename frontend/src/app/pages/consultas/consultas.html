@@ -1,0 +1,232 @@
+<div class="consultas-container">
+  <header class="section-top">
+    <div>
+      <h1>Consultas e Interesados</h1>
+      <p class="subtitle">Registrá y hacé seguimiento de postulantes según canal de origen</p>
+    </div>
+    <button type="button" class="btn-nueva" (click)="abrirModal()">+ Registrar Consulta</button>
+  </header>
+
+  <!-- Barra de Filtros y Búsqueda -->
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="toolbar-filtros">
+    <div class="search-input-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+        placeholder="Buscar por nombre, teléfono, email o carrera..." class="input-search" />
+    </div>
+
+    <div class="date-range-wrapper">
+      <div class="date-field">
+        <label for="fechaDesde">Desde:</label>
+        <input id="fechaDesde" type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)"
+          class="input-date" />
+      </div>
+
+      <div class="date-field">
+        <label for="fechaHasta">Hasta:</label>
+        <input id="fechaHasta" type="date" [ngModel]="fechaHasta()" [min]="fechaDesde()"
+          (ngModelChange)="fechaHasta.set($event)" class="input-date" />
+      </div>
+    </div>
+
+    @if (searchTerm() || fechaDesde() || fechaHasta()) {
+    <button type="button" class="btn-clear-filtros" (click)="limpiarFiltros()">
+      Limpiar filtros
+    </button>
+    }
+  </div>
+
+  @if (consultasService.isLoading()) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando consultas...</p>
+  </div>
+  } @else if (consultasService.consultas().length === 0) {
+  <div class="consultas-empty">
+    <div class="empty-icon">💬</div>
+    <h3>No hay consultas registradas</h3>
+    <p>Comenzá registrando las consultas recibidas por WhatsApp, correo o mostrador.</p>
+    <button type="button" class="btn-nueva empty-btn" (click)="abrirModal()">Registrar Consulta</button>
+  </div>
+  } @else if (consultasFiltradas().length === 0) {
+  <div class="consultas-empty">
+    <div class="empty-icon">🔎</div>
+    <h3>Sin resultados</h3>
+    <p>No se encontraron consultas con los filtros seleccionados.</p>
+    <button type="button" class="btn-clear-filtros" (click)="limpiarFiltros()">Restablecer búsqueda</button>
+  </div>
+  } @else {
+  <div class="table-wrapper">
+    <table class="consultas-table">
+      <thead>
+        <tr>
+          <th class="th-sortable" (click)="toggleSort('nombre_interesado')">
+            <div class="th-content">
+              <span>Interesado</span>
+              <span class="sort-indicator">
+                {{ sortColumn() === 'nombre_interesado' ? (sortDirection() === 'asc' ? '▲' : '▼') : '⇅' }}
+              </span>
+            </div>
+          </th>
+          <th class="th-sortable" (click)="toggleSort('carrera')">
+            <div class="th-content">
+              <span>Carrera de Interés</span>
+              <span class="sort-indicator">
+                {{ sortColumn() === 'carrera' ? (sortDirection() === 'asc' ? '▲' : '▼') : '⇅' }}
+              </span>
+            </div>
+          </th>
+          <th class="th-sortable" (click)="toggleSort('canal')">
+            <div class="th-content">
+              <span>Canal</span>
+              <span class="sort-indicator">
+                {{ sortColumn() === 'canal' ? (sortDirection() === 'asc' ? '▲' : '▼') : '⇅' }}
+              </span>
+            </div>
+          </th>
+          <th>Contacto</th>
+          <th class="th-sortable" (click)="toggleSort('creado_en')">
+            <div class="th-content">
+              <span>Fecha</span>
+              <span class="sort-indicator">
+                {{ sortColumn() === 'creado_en' ? (sortDirection() === 'asc' ? '▲' : '▼') : '⇅' }}
+              </span>
+            </div>
+          </th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of consultasFiltradas(); track c.id) {
+        <tr>
+          <td>
+            <div class="interesado-info">
+              <strong>{{ c.nombre_interesado }}</strong>
+              @if (c.notas) {
+              <small class="notas-hint">{{ c.notas }}</small>
+              }
+            </div>
+          </td>
+          <td>{{ c.carreras?.nombre || obtenerNombreCarrera(c.carrera_id) }}</td>
+          <td>
+            <span class="badge-canal canal-{{ c.canal }}">{{ c.canal }}</span>
+          </td>
+          <td class="contacto-cell">
+            <div class="contacto-wrapper">
+              @if (c.telefono) {
+              <div class="contacto-item">
+                <span class="icon">📞</span>
+                <span>{{ c.telefono }}</span>
+              </div>
+              }
+              @if (c.email) {
+              <div class="contacto-item">
+                <span class="icon">✉️</span>
+                <span [title]="c.email">{{ c.email }}</span>
+              </div>
+              }
+              @if (!c.telefono && !c.email) {
+              <span class="text-muted">Sin datos</span>
+              }
+            </div>
+          </td>
+          <td>
+            {{ c.creado_en | date:'dd/MM/yyyy' }}
+          </td>
+          <td>
+            <select class="badge-estado estado-{{ c.estado || 'pendiente' }}" [value]="c.estado || 'pendiente'"
+              (change)="actualizarEstado(c, $event)">
+              <option value="pendiente">Pendiente</option>
+              <option value="contactado">Contactado</option>
+              <option value="inscripto">Inscripto</option>
+              <option value="descartado">Descartado</option>
+            </select>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+
+  <!-- Modal Registrar Consulta -->
+  @if (mostrarModal()) {
+  <div class="modal-backdrop" (click)="cerrarModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Registrar Nueva Consulta</h2>
+        <button type="button" class="btn-close" (click)="cerrarModal()">✕</button>
+      </header>
+
+      @if (errorMessage()) {
+      <div class="alert-error">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="guardarConsulta()">
+        <div class="form-group">
+          <label for="nombre_interesado">Nombre y Apellido del Interesado *</label>
+          <input id="nombre_interesado" type="text" formControlName="nombre_interesado"
+            placeholder="Ej: Marcos Gómez" />
+          @if (form.get('nombre_interesado')?.touched && form.get('nombre_interesado')?.hasError('required')) {
+          <small class="error-text">El nombre es obligatorio.</small>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="carrera_id">Carrera de Consulta *</label>
+            <select id="carrera_id" formControlName="carrera_id">
+              <option value="" disabled>Seleccioná una carrera</option>
+              @for (carrera of carrerasService.carreras(); track carrera.id) {
+              <option [value]="carrera.id">{{ carrera.nombre }}</option>
+              }
+            </select>
+            @if (form.get('carrera_id')?.touched && form.get('carrera_id')?.hasError('required')) {
+            <small class="error-text">Seleccioná una carrera.</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="canal">Canal de Ingreso *</label>
+            <select id="canal" formControlName="canal">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="web">Formulario Web</option>
+              <option value="presencial">Presencial / Mesa de entrada</option>
+              <option value="correo">Correo Electrónico</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="telefono">Teléfono / Celular</label>
+            <input id="telefono" type="text" formControlName="telefono" placeholder="Ej: +54 9 223 123456" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Correo Electrónico</label>
+            <input id="email" type="email" formControlName="email" placeholder="ejemplo@correo.com" />
+            @if (form.get('email')?.touched && form.get('email')?.hasError('email')) {
+            <small class="error-text">Ingresá un correo electrónico válido.</small>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notas">Observaciones o Consulta específica</label>
+          <textarea id="notas" formControlName="notas" rows="3"
+            placeholder="Preguntó por horarios de cursada, aranceles, equivalencias..."></textarea>
+        </div>
+
+        <footer class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Guardando...' : 'Registrar Consulta' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+  }
+</div>

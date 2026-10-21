@@ -2,14 +2,188 @@
   <header class="section-top">
     <div>
       <h1>Oferta Académica</h1>
-      <p class="subtitle">Administrá las carreras y programas activos de tu institución</p>
+      <p class="subtitle">Administrá los programas activos y dados de baja de tu institución</p>
     </div>
-    <button class="btn-nueva">+ Nueva Carrera</button>
+    @if (pestanaActiva() === 'activas') {
+      <button class="btn-nueva" (click)="abrirModal()">+ Nueva Carrera</button>
+    }
   </header>
 
-  <div class="carreras-empty">
-    <div class="empty-icon">🎓</div>
-    <h3>No hay carreras registradas aún</h3>
-    <p>Comenzá agregando la primera carrera para vincular consultas de interesados.</p>
+  <!-- Pestañas (Tabs) -->
+  <div class="tabs-nav">
+    <button class="tab-btn" [class.active]="pestanaActiva() === 'activas'" (click)="cambiarPestana('activas')">
+      Activas
+    </button>
+    <button class="tab-btn" [class.active]="pestanaActiva() === 'inactivas'" (click)="cambiarPestana('inactivas')">
+      Dadas de Baja
+    </button>
   </div>
+
+  @if (carrerasService.isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando carreras...</p>
+    </div>
+  } @else if (carrerasService.carreras().length === 0) {
+    <div class="carreras-empty">
+      <div class="empty-icon">{{ pestanaActiva() === 'activas' ? '🎓' : '📁' }}</div>
+      <h3>
+        {{ pestanaActiva() === 'activas' ? 'No hay carreras activas registradas' : 'No hay carreras dadas de baja' }}
+      </h3>
+      <p>
+        {{ pestanaActiva() === 'activas'
+        ? 'Comenzá agregando la primera carrera para vincular consultas.'
+        : 'Las carreras que desactives se listarán acá para que puedas reactivarlas cuando quieras.' }}
+      </p>
+      @if (pestanaActiva() === 'activas') {
+        <button class="btn-nueva empty-btn" (click)="abrirModal()">Agregar Carrera</button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="carreras-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre de la Carrera</th>
+            <th>Duración</th>
+            <th class="th-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (carrera of carrerasService.carreras(); track carrera.id) {
+            <tr>
+              <td>
+                <span class="badge-code">{{ carrera.codigo || 'S/C' }}</span>
+              </td>
+              <td class="carrera-nombre">{{ carrera.nombre }}</td>
+              <td>{{ carrera.duracion_anios ? carrera.duracion_anios + ' años' : '-' }}</td>
+              <td class="td-actions">
+                @if (pestanaActiva() === 'activas') {
+                  <button type="button" class="btn-action btn-edit" (click)="abrirModalEdicion(carrera)">
+                    Editar
+                  </button>
+                  <button type="button" class="btn-action btn-danger" (click)="darDeBaja(carrera)">
+                    Dar de baja
+                  </button>
+                } @else {
+                  <button type="button" class="btn-action btn-reactivar" (click)="darDeAlta(carrera)">
+                    Reactivar
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Modal Crear Carrera -->
+  @if (mostrarModal()) {
+    <div class="modal-backdrop" (click)="cerrarModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>Nueva Carrera</h2>
+          <button type="button" class="btn-close" (click)="cerrarModal()">✕</button>
+        </header>
+
+        @if (errorMessage()) {
+          <div class="alert-error">{{ errorMessage() }}</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="guardarCarrera()">
+          <div class="form-group">
+            <label for="nombre">Nombre de la Carrera *</label>
+            <input 
+              id="nombre" 
+              type="text" 
+              formControlName="nombre"
+              placeholder="Ej: Tecnicatura Universitaria en Programación" 
+            />
+            @if (form.get('nombre')?.touched && form.get('nombre')?.hasError('required')) {
+              <small class="error-text">El nombre es obligatorio.</small>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="codigo">Código / Sigla</label>
+              <input id="codigo" type="text" formControlName="codigo" placeholder="Ej: TUP" />
+            </div>
+
+            <div class="form-group">
+              <label for="duracion_anios">Duración (años)</label>
+              <input 
+                id="duracion_anios" 
+                type="number" 
+                formControlName="duracion_anios" 
+                placeholder="Ej: 2" 
+                min="1"
+                max="10" 
+              />
+            </div>
+          </div>
+
+          <footer class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+              {{ isSubmitting() ? 'Guardando...' : 'Crear Carrera' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Editar Carrera -->
+  @if (mostrarModalEdicion()) {
+    <div class="modal-backdrop" (click)="cerrarModalEdicion()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2>Editar Carrera</h2>
+          <button type="button" class="btn-close" (click)="cerrarModalEdicion()">✕</button>
+        </header>
+
+        @if (errorMessage()) {
+          <div class="alert-error">{{ errorMessage() }}</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="guardarEdicion()">
+          <div class="form-group">
+            <label for="edit_nombre">Nombre de la Carrera *</label>
+            <input id="edit_nombre" type="text" formControlName="nombre" />
+            @if (form.get('nombre')?.touched && form.get('nombre')?.hasError('required')) {
+              <small class="error-text">El nombre es obligatorio.</small>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit_codigo">Código / Sigla</label>
+              <input id="edit_codigo" type="text" formControlName="codigo" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit_duracion">Duración (Años)</label>
+              <input 
+                id="edit_duracion" 
+                type="number" 
+                min="1" 
+                max="10" 
+                formControlName="duracion_anios" 
+              />
+            </div>
+          </div>
+
+          <footer class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="cerrarModalEdicion()">Cancelar</button>
+            <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+              {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
 </div>
