@@ -19,7 +19,8 @@ export const verificarToken = (req, res, next) => {
 
       next();
     });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+} catch (error) {
+    console.error('Error en verificarToken:', error);
+    return res.status(500).json({ error: 'Error interno al procesar la autenticación' });
   }
 };

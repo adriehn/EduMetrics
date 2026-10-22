@@ -4,22 +4,21 @@ import { supabase } from '../config/supabase.js';
 export const getCarreras = async (req, res) => {
   try {
     const institucion_id = req.institucion_id;
-    // Si viene req.query.activo como "false", es false; caso contrario, true
     const soloActivas = req.query.activo !== 'false';
 
     const { data, error } = await supabase
       .from('carreras')
       .select('id, institucion_id, nombre, codigo, duracion_anios, activo, creado_en')
       .eq('institucion_id', institucion_id)
-      .eq('activo', soloActivas) // <-- Acá usamos soloActivas en lugar del booleano estático
+      .eq('activo', soloActivas)
       .order('nombre', { ascending: true });
 
     if (error) throw error;
 
     return res.status(200).json(data);
   } catch (error) {
-    console.error('Error en getCarreras:', error.message);
-    return res.status(500).json({ error: error.message });
+    console.error('Error en getCarreras:', error);
+    return res.status(500).json({ error: 'Error al obtener las carreras' });
   }
 };
 
@@ -30,29 +29,27 @@ export const toggleEstadoCarrera = async (req, res) => {
     const { id } = req.params;
     const { activo } = req.body;
 
-    console.log('--- TOGGLE ESTADO CARRERA ---');
-    console.log(`ID: ${id}, institucion_id: ${institucion_id}, nuevo activo:`, activo);
-
-    const nuevoEstado = Boolean(activo);
+    if (typeof activo !== 'boolean') {
+      return res.status(400).json({ error: 'El campo activo debe ser un booleano' });
+    }
 
     const { data, error } = await supabase
       .from('carreras')
-      .update({ activo: nuevoEstado })
+      .update({ activo })
       .eq('id', id)
       .eq('institucion_id', institucion_id)
       .select('id, institucion_id, nombre, codigo, duracion_anios, activo, creado_en')
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error('Error Supabase update:', error);
-      throw error;
+    if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ error: 'Carrera no encontrada' });
     }
 
-    console.log('Carrera actualizada en Supabase:', data);
     return res.status(200).json(data);
   } catch (error) {
-    console.error('Error en toggleEstadoCarrera:', error.message);
-    return res.status(500).json({ error: error.message });
+    console.error('Error en toggleEstadoCarrera:', error);
+    return res.status(500).json({ error: 'Error al actualizar el estado de la carrera' });
   }
 };
 
@@ -62,9 +59,7 @@ export const createCarrera = async (req, res) => {
     const institucion_id = req.institucion_id;
     const { nombre, codigo, duracion_anios } = req.body;
 
-    console.log('--- REQ BODY RECIBIDO ---', req.body);
-
-    if (!nombre) {
+    if (typeof nombre !== 'string' || !nombre.trim()) {
       return res.status(400).json({ error: 'El nombre de la carrera es obligatorio' });
     }
 
@@ -72,15 +67,17 @@ export const createCarrera = async (req, res) => {
       ? parseInt(duracion_anios, 10)
       : null;
 
+    if (duracionParsed !== null && (isNaN(duracionParsed) || duracionParsed < 1 || duracionParsed > 15)) {
+      return res.status(400).json({ error: 'La duración en años debe ser un número válido entre 1 y 15' });
+    }
+
     const nuevaCarrera = {
       institucion_id,
       nombre: nombre.trim(),
-      codigo: codigo ? codigo.trim() : null,
+      codigo: typeof codigo === 'string' && codigo.trim() ? codigo.trim() : null,
       duracion_anios: duracionParsed,
-      activo: true // Aseguramos que nazca activa
+      activo: true
     };
-
-    console.log('--- INSERTANDO EN SUPABASE ---', nuevaCarrera);
 
     const { data, error } = await supabase
       .from('carreras')
@@ -88,50 +85,57 @@ export const createCarrera = async (req, res) => {
       .select('id, institucion_id, nombre, codigo, duracion_anios, activo, creado_en')
       .single();
 
-    if (error) {
-      console.error('Error de Supabase al insertar:', error);
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log('--- CARRERA CREADA CON ÉXITO ---', data);
     return res.status(201).json(data);
   } catch (error) {
-    console.error('Error en createCarrera:', error.message);
-    return res.status(500).json({ error: error.message });
+    console.error('Error en createCarrera:', error);
+    return res.status(500).json({ error: 'Error al crear la carrera' });
   }
 };
 
+// 4. Actualizar datos de una carrera
 export const updateCarrera = async (req, res) => {
   try {
     const { id } = req.params;
     const institucion_id = req.institucion_id;
-    const { nombre, codigo, duracion_anios } = req.body; // <-- Cambiado a duracion_anios
+    const { nombre, codigo, duracion_anios } = req.body;
 
-    if (!nombre || !nombre.trim()) {
+    if (typeof nombre !== 'string' || !nombre.trim()) {
       return res.status(400).json({ error: 'El nombre de la carrera es obligatorio' });
+    }
+
+    const duracionParsed = (duracion_anios !== null && duracion_anios !== undefined && duracion_anios !== '')
+      ? Number(duracion_anios)
+      : null;
+
+    if (duracionParsed !== null && (isNaN(duracionParsed) || duracionParsed < 1 || duracionParsed > 15)) {
+      return res.status(400).json({ error: 'La duración en años debe ser un número válido entre 1 y 15' });
     }
 
     const { data, error } = await supabase
       .from('carreras')
       .update({
         nombre: nombre.trim(),
-        codigo: codigo ? codigo.trim() : null,
-        duracion_anios: duracion_anios !== null && duracion_anios !== undefined && !isNaN(Number(duracion_anios)) 
-          ? Number(duracion_anios) 
-          : null // <-- Guarda en duracion_anios
+        codigo: typeof codigo === 'string' && codigo.trim() ? codigo.trim() : null,
+        duracion_anios: duracionParsed
       })
       .eq('id', id)
       .eq('institucion_id', institucion_id)
-      .select()
-      .single();
+      .select('id, institucion_id, nombre, codigo, duracion_anios, activo, creado_en')
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ error: 'Carrera no encontrada' });
+    }
 
     return res.status(200).json({
       message: 'Carrera actualizada exitosamente',
       carrera: data
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error('Error en updateCarrera:', error);
+    return res.status(500).json({ error: 'Error al actualizar la carrera' });
   }
 };

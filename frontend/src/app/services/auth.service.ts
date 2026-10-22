@@ -29,7 +29,6 @@ export class AuthService {
   private readonly TOKEN_KEY = 'edumetrics_token';
   private readonly USER_KEY = 'edumetrics_user';
 
-  // Signals para manejar estado reactivo
   currentUser = signal<Institucion | null>(this.getUserFromStorage());
 
   register(data: { nombre: string; email: string; password: string }) {
@@ -63,12 +62,37 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      // Decodificamos la parte central (payload) del JWT para verificar que tenga formato válido y no haya expirado
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return false;
+
+      const payload = JSON.parse(atob(payloadBase64));
+      const ahoraEnSegundos = Math.floor(Date.now() / 1000);
+
+      if (payload.exp && payload.exp < ahoraEnSegundos) {
+        this.logout();
+        return false;
+      }
+      return true;
+    } catch {
+      // Si el token fue adulterado o tiene formato inválido, limpiamos sesión
+      this.logout();
+      return false;
+    }
   }
 
   private getUserFromStorage(): Institucion | null {
     if (!this.isBrowser) return null;
-    const raw = localStorage.getItem(this.USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem(this.USER_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      localStorage.removeItem(this.USER_KEY);
+      return null;
+    }
   }
 }

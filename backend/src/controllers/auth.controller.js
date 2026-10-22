@@ -7,15 +7,26 @@ export const register = async (req, res) => {
   try {
     const { nombre, email, password } = req.body;
 
-    if (!nombre || !email || !password) {
-      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    // Validar presencia y que sean estrictamente strings
+    if (
+      typeof nombre !== 'string' || !nombre.trim() ||
+      typeof email !== 'string' || !email.trim() ||
+      typeof password !== 'string' || !password
+    ) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios y deben ser texto válido' });
     }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+
+    const emailLimpio = email.trim().toLowerCase();
 
     // Verificar si el correo ya existe
     const { data: usuarioExistente } = await supabase
       .from('instituciones')
       .select('id')
-      .eq('email', email.trim().toLowerCase())
+      .eq('email', emailLimpio)
       .maybeSingle();
 
     if (usuarioExistente) {
@@ -32,7 +43,7 @@ export const register = async (req, res) => {
       .insert([
         {
           nombre: nombre.trim(),
-          email: email.trim().toLowerCase(),
+          email: emailLimpio,
           password_hash
         }
       ])
@@ -46,7 +57,8 @@ export const register = async (req, res) => {
       institucion: nuevaInstitucion
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error('Error en register:', error);
+    return res.status(500).json({ error: 'Error interno del servidor al registrar la institución' });
   }
 };
 
@@ -55,7 +67,7 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return res.status(400).json({ error: 'Email y contraseña requeridos' });
     }
 
@@ -93,6 +105,7 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error('Error en login:', error);
+    return res.status(500).json({ error: 'Error interno del servidor al iniciar sesión' });
   }
 };
