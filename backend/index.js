@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import authRoutes from './routes/auth.routes.js';
-import carrerasRoutes from './routes/carreras.routes.js';
-import consultasRoutes from './routes/consultas.routes.js';
+import authRoutes from './src/routes/auth.routes.js';
+import carrerasRoutes from './src/routes/carreras.routes.js';
+import consultasRoutes from './src/routes/consultas.routes.js';
 
 dotenv.config();
 
