@@ -63,6 +63,8 @@ export const register = async (req, res) => {
 };
 
 // Iniciar Sesión
+// backend/src/controllers/auth.controller.js
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -71,10 +73,10 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña requeridos' });
     }
 
-    // Buscar institución
+    // 1. Asegurar 'avatar_url' en el SELECT
     const { data: institucion, error } = await supabase
       .from('instituciones')
-      .select('id, nombre, email, password_hash')
+      .select('id, nombre, email, password_hash, avatar_url') // <-- AGREGAR avatar_url
       .eq('email', email.trim().toLowerCase())
       .maybeSingle();
 
@@ -88,20 +90,22 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    // Firmar Token con el id de la institución adentro
+    // Firmar Token
     const token = jwt.sign(
       { institucion_id: institucion.id, nombre: institucion.nombre },
       process.env.JWT_SECRET,
-      { expiresIn: '12h' }
+      { expiresIn: '24h' }
     );
 
+    // 2. Devolver 'avatar_url' en el objeto institucion
     return res.status(200).json({
       message: 'Inicio de sesión exitoso',
       token,
       institucion: {
         id: institucion.id,
         nombre: institucion.nombre,
-        email: institucion.email
+        email: institucion.email,
+        avatar_url: institucion.avatar_url // <-- AGREGAR avatar_url AQUÍ
       }
     });
   } catch (error) {

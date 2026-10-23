@@ -4,18 +4,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { Institucion, AuthResponse, LoginDTO, RegisterDTO } from '../models';
 
-export interface Institucion {
-  id: string;
-  nombre: string;
-  email: string;
-}
-
-export interface AuthResponse {
-  message: string;
-  token: string;
-  institucion: Institucion;
-}
 
 @Injectable({
   providedIn: 'root'
@@ -31,14 +21,14 @@ export class AuthService {
 
   currentUser = signal<Institucion | null>(this.getUserFromStorage());
 
-  private readonly BACKEND_URL = 'https://edumetrics-sooty.vercel.app'; // URL fija temporal
+  //private readonly BACKEND_URL = 'https://edumetrics-sooty.vercel.app'; // URL fija temporal
 
   register(data: { nombre: string; email: string; password: string }) {
-    return this.http.post(`${this.BACKEND_URL}/auth/register`, data);
+    return this.http.post(`${environment.apiUrl}/auth/register`, data);
   }
 
   login(credentials: { email: string; password: string }) {
-    return this.http.post<AuthResponse>(`${this.BACKEND_URL}/auth/login`, credentials).pipe(
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials).pipe(
       tap((res) => {
         if (this.isBrowser) {
           localStorage.setItem(this.TOKEN_KEY, res.token);
@@ -95,5 +85,11 @@ export class AuthService {
       localStorage.removeItem(this.USER_KEY);
       return null;
     }
+  }
+  actualizarUsuario(usuario: Institucion) {
+    if (this.isBrowser) {
+      localStorage.setItem(this.USER_KEY, JSON.stringify(usuario));
+    }
+    this.currentUser.set(usuario);
   }
 }

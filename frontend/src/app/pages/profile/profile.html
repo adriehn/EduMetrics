@@ -1,0 +1,177 @@
+<div class="profile-container">
+    <header class="profile-header">
+        <h1>Perfil Institucional</h1>
+        <p class="subtitle">Administrá la identidad de tu cuenta y la seguridad de acceso</p>
+    </header>
+
+    @if (isLoading()) {
+    <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando información del perfil...</p>
+    </div>
+    } @else {
+    <div class="profile-grid">
+
+        <!-- Columna 1: Tarjeta de Avatar & Resumen -->
+        <section class="card avatar-card">
+            <div class="avatar-preview-wrapper">
+                @if (perfil()?.avatar_url) {
+                <img [src]="perfil()?.avatar_url" alt="Avatar Institución" class="avatar-img" />
+                } @else {
+                <div class="avatar-placeholder">
+                    {{ perfil()?.nombre ? perfil()!.nombre.substring(0, 2).toUpperCase() : 'ED' }}
+                </div>
+                }
+
+                @if (isUploadingAvatar()) {
+                <div class="avatar-loading-overlay">
+                    <div class="mini-spinner"></div>
+                </div>
+                }
+            </div>
+
+            <h3>{{ perfil()?.nombre }}</h3>
+            <span class="user-role-badge">Institución Activa</span>
+
+            <label class="btn-avatar-upload" for="fileAvatar">
+                📷 Cambiar Foto
+            </label>
+            <input id="fileAvatar" type="file" accept="image/png, image/jpeg, image/webp"
+                (change)="onAvatarChange($event)" class="hidden-file-input" />
+            <small class="avatar-hint">JPG, PNG o WebP. Máximo 3 MB.</small>
+        </section>
+
+        <!-- Columna 2: Formularios de Edición y Seguridad -->
+        <div class="forms-wrapper">
+
+            <!-- Formulario Datos Generales -->
+            <section class="card">
+                <h2>Datos Generales</h2>
+                <p class="card-desc">Información básica visible en los reportes y gestión administrativa</p>
+
+                @if (mensajeExitoDatos()) {
+                <div class="alert-success">{{ mensajeExitoDatos() }}</div>
+                }
+                @if (mensajeErrorDatos()) {
+                <div class="alert-error">{{ mensajeErrorDatos() }}</div>
+                }
+
+                <form [formGroup]="formDatos" (ngSubmit)="guardarDatos()">
+                    <div class="form-group">
+                        <label for="nombre">Nombre de la Institución *</label>
+                        <input id="nombre" type="text" formControlName="nombre"
+                            placeholder="Ej: Universidad Tecnológica" />
+                        @if (formDatos.get('nombre')?.touched && formDatos.get('nombre')?.hasError('required')) {
+                        <small class="error-text">El nombre es obligatorio.</small>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico de Contacto *</label>
+                        <input id="email" type="email" formControlName="email"
+                            placeholder="contacto@institucion.edu.ar" />
+                        @if (formDatos.get('email')?.touched && formDatos.get('email')?.hasError('email')) {
+                        <small class="error-text">Ingresá un correo electrónico válido.</small>
+                        }
+                    </div>
+
+                    <div class="card-actions">
+                        <button type="submit" class="btn-primary" [disabled]="isSubmittingDatos()">
+                            {{ isSubmittingDatos() ? 'Guardando...' : 'Actualizar Datos' }}
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Formulario Seguridad / Contraseña -->
+            <section class="card">
+                <h2>Seguridad y Contraseña</h2>
+                <p class="card-desc">Modificá la clave de acceso para los operadores de este turno</p>
+
+                @if (mensajeExitoPass()) {
+                <div class="alert-success">{{ mensajeExitoPass() }}</div>
+                }
+                @if (mensajeErrorPass()) {
+                <div class="alert-error">{{ mensajeErrorPass() }}</div>
+                }
+
+                <form [formGroup]="formPassword" (ngSubmit)="guardarPassword()">
+                    <div class="form-group">
+                        <label for="passwordActual">Contraseña Actual *</label>
+                        <input id="passwordActual" type="password" formControlName="passwordActual"
+                            placeholder="••••••••" />
+                        @if (formPassword.get('passwordActual')?.touched &&
+                        formPassword.get('passwordActual')?.hasError('required')) {
+                        <small class="error-text">Debés ingresar tu contraseña actual.</small>
+                        }
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nuevaPassword">Nueva Contraseña *</label>
+                            <input id="nuevaPassword" type="password" formControlName="nuevaPassword"
+                                placeholder="Mínimo 8 caracteres" />
+                            @if (formPassword.get('nuevaPassword')?.touched) {
+                            @if (formPassword.get('nuevaPassword')?.hasError('required')) {
+                            <small class="error-text">La nueva contraseña es obligatoria.</small>
+                            } @else if (formPassword.get('nuevaPassword')?.hasError('minlength')) {
+                            <small class="error-text">Debe tener al menos 8 caracteres.</small>
+                            } @else if (formPassword.get('nuevaPassword')?.hasError('pattern')) {
+                            <small class="error-text">Debe incluir al menos 1 mayúscula y 1 número.</small>
+                            }
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmarPassword">Confirmar Nueva Contraseña *</label>
+                            <input id="confirmarPassword" type="password" formControlName="confirmarPassword"
+                                placeholder="••••••••" />
+                            @if (formPassword.touched && formPassword.hasError('passwordsMismatch')) {
+                            <small class="error-text">Las contraseñas no coinciden.</small>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button type="submit" class="btn-primary" [disabled]="isSubmittingPass()">
+                            {{ isSubmittingPass() ? 'Modificando...' : 'Cambiar Contraseña' }}
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+        </div>
+    </div>
+    }
+</div>
+<!-- Modal de Confirmación de Email -->
+@if (mostrarModalEmail()) {
+<div class="modal-backdrop" (click)="cancelarCambioEmail()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-icon-warning">⚠️</div>
+
+        <h3>¿Confirmar cambio de correo?</h3>
+
+        <p class="modal-text">
+            Estás a punto de modificar el email de acceso a:
+        </p>
+
+        <div class="email-highlight-box">
+            <strong>{{ nuevoEmailPendiente() }}</strong>
+        </div>
+
+        <p class="modal-subtext">
+            Este nuevo correo será el que deberás usar obligatoriamente en tu próximo inicio de sesión.
+        </p>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="cancelarCambioEmail()">
+                Cancelar
+            </button>
+            <button type="button" class="btn-warning-confirm" (click)="confirmarCambioEmail()">
+                Sí, cambiar correo
+            </button>
+        </div>
+    </div>
+</div>
+}

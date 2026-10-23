@@ -2,35 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface Consulta {
-  id: string;
-  codigo_ticket?: string | null;
-  institucion_id: string;
-  carrera_id: string;
-  nombre_interesado: string;
-  email?: string | null;
-  telefono?: string | null;
-  canal: 'whatsapp' | 'web' | 'presencial' | 'correo' | string;
-  estado: 'pendiente' | 'contactado' | 'inscripto' | 'descartado' | string;
-  notas?: string | null;
-  creado_en?: string;
-  carreras?: {
-    id?: string;
-    nombre: string;
-    codigo?: string | null;
-  };
-}
-
-export interface CrearConsultaPayload {
-  carrera_id: string;
-  nombre_interesado: string;
-  canal: string;
-  telefono?: string | null;
-  email?: string | null;
-  notas?: string | null;
-}
-
+import { Consulta, CrearConsultaPayload, CanalConsulta, EstadoConsulta } from '../models';
 @Injectable({
   providedIn: 'root'
 })

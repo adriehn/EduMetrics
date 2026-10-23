@@ -1,8 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ConsultasService, Consulta } from '../../services/consultas.service';
-
+import { ConsultasService } from '../../services/consultas.service';
+import { Consulta, CrearConsultaPayload } from '../../models';
 @Component({
   selector: 'app-notas',
   standalone: true,

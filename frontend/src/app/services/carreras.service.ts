@@ -2,16 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { Carrera, CarreraDTO } from '../models'; 
 
-export interface Carrera {
-    id: string;
-    institucion_id: string;
-    nombre: string;
-    codigo?: string;
-    duracion_anios?: number;
-    activo: boolean;
-    creado_en?: string;
-}
 
 @Injectable({
     providedIn: 'root'

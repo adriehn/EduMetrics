@@ -19,10 +19,21 @@
         <a routerLink="/login" class="btn btn-login">Iniciar Sesión</a>
         <a routerLink="/registro" class="btn btn-register">Registrarse</a>
       } @else {
-        <div class="user-badge">
-          <span class="user-icon">🏛️</span>
+        <a routerLink="/perfil" routerLinkActive="user-badge-active" class="user-badge" title="Ir a Mi Perfil">
+          @if (authService.currentUser()?.avatar_url) {
+            <img 
+              [src]="authService.currentUser()?.avatar_url" 
+              alt="Avatar" 
+              class="user-avatar-img" 
+            />
+          } @else {
+            <span class="user-avatar-initials">
+              {{ authService.currentUser()?.nombre?.substring(0, 2)?.toUpperCase() || 'ED' }}
+            </span>
+          }
           <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
-        </div>
+        </a>
+
         <button (click)="authService.logout()" class="btn btn-logout">Cerrar Sesión</button>
       }
     </div>

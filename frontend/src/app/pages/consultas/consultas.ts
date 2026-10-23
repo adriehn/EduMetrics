@@ -1,8 +1,10 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
-import { ConsultasService, CrearConsultaPayload, Consulta } from '../../services/consultas.service';
 import { CarrerasService } from '../../services/carreras.service';
+import { ConsultasService } from '../../services/consultas.service';
+import { Consulta, CrearConsultaPayload } from '../../models';
+
 
 type SortColumn = 'codigo_ticket' | 'nombre_interesado' | 'carrera' | 'canal' | 'creado_en';
 type SortDirection = 'asc' | 'desc';

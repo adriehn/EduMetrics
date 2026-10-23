@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './src/routes/auth.routes.js';
 import carrerasRoutes from './src/routes/carreras.routes.js';
 import consultasRoutes from './src/routes/consultas.routes.js';
+import perfilRoutes from './src/routes/perfil.routes.js';
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ app.use(cors({
       callback(new Error('Bloqueado por CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -54,6 +55,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+
 // Registramos las rutas con y sin el prefijo /api por seguridad ante el mapeo de Vercel
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/carreras', carrerasRoutes);
@@ -63,6 +65,9 @@ app.use('/api/consultas', consultasRoutes);
 app.use('/auth', authLimiter, authRoutes);
 app.use('/carreras', carrerasRoutes);
 app.use('/consultas', consultasRoutes);
+
+app.use('/api/perfil', perfilRoutes);
+app.use('/perfil', perfilRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

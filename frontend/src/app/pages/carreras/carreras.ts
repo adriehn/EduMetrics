@@ -1,8 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CarrerasService, Carrera } from '../../services/carreras.service';
-
+import { Carrera, CarreraDTO } from '../../models'; 
+import { CarrerasService } from '../../services/carreras.service';
 @Component({
   selector: 'app-carreras',
   standalone: true,
