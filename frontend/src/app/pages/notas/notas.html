@@ -72,7 +72,11 @@
                 {{ c.notas || 'Hacé clic para escribir una observación de turno...' }}
               </td>
               <td class="col-acciones">
-                <button class="btn-resolver" (click)="marcarResuelta(c)" title="Dar por resuelta y archivar del turno">
+                <button 
+                  type="button"
+                  class="btn-resolver" 
+                  (click)="solicitarResolucion(c)" 
+                  title="Dar por resuelta y archivar del turno">
                   ✓ Resolver
                 </button>
               </td>
@@ -80,6 +84,67 @@
           }
         </tbody>
       </table>
+    </div>
+  }
+
+  <!-- Modal Confirmar Resolución -->
+  @if (consultaAResolver(); as c) {
+    <div class="modal-backdrop" (click)="cerrarModalResolucion()">
+      <div class="modal-card modal-confirm-card" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="text-success">Marcar Consulta como Resuelta</h2>
+          <button 
+            type="button" 
+            class="btn-close" 
+            [disabled]="isResolving()" 
+            (click)="cerrarModalResolucion()">
+            ✕
+          </button>
+        </header>
+
+        @if (errorMessageModal()) {
+          <div class="alert-error">{{ errorMessageModal() }}</div>
+        }
+
+        <div class="modal-confirm-body">
+          <p>
+            ¿Confirmás que querés marcar como contactada/resuelta la consulta de 
+            <strong class="highlight-consulta">{{ c.nombre_interesado }}</strong>?
+          </p>
+
+          <div class="ticket-info-box">
+            <div>
+              <span class="ticket-label">Ticket:</span> 
+              <span class="badge-ticket">{{ c.codigo_ticket || 'S/N' }}</span>
+            </div>
+            <div>
+              <span class="ticket-label">Carrera:</span> 
+              <strong>{{ c.carreras?.nombre || '-' }}</strong>
+            </div>
+          </div>
+
+          <p class="modal-confirm-hint">
+            La consulta pasará al estado <strong>contactado</strong> y se archivará de esta planilla de turno.
+          </p>
+        </div>
+
+        <footer class="modal-actions">
+          <button 
+            type="button" 
+            class="btn-cancel" 
+            [disabled]="isResolving()" 
+            (click)="cerrarModalResolucion()">
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn-submit-resolver" 
+            [disabled]="isResolving()" 
+            (click)="confirmarResolucion()">
+            {{ isResolving() ? 'Guardando...' : 'Sí, dar por resuelta' }}
+          </button>
+        </footer>
+      </div>
     </div>
   }
 </div>

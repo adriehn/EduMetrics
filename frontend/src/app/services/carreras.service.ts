@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Carrera, CarreraDTO } from '../models'; 
+import { Carrera, CarreraDTO } from '../models';
 
 
 @Injectable({
@@ -13,6 +13,8 @@ export class CarrerasService {
     private apiUrl = `${environment.apiUrl}/carreras`;
 
     carreras = signal<Carrera[]>([]);
+    // Señal dedicada para selects y formularios en toda la app
+    carrerasActivas = signal<Carrera[]>([]);
     isLoading = signal<boolean>(false);
 
     obtenerCarreras(activo: boolean = true) {
@@ -21,6 +23,9 @@ export class CarrerasService {
             tap({
                 next: (data) => {
                     this.carreras.set(data);
+                    if (activo) {
+                        this.carrerasActivas.set(data);
+                    }
                     this.isLoading.set(false);
                 },
                 error: () => this.isLoading.set(false)
@@ -28,6 +33,12 @@ export class CarrerasService {
         );
     }
 
+    // Método auxiliar directo para selectores
+    cargarCarrerasParaSelect() {
+        return this.http.get<Carrera[]>(`${this.apiUrl}?activo=true`).pipe(
+            tap((data) => this.carrerasActivas.set(data))
+        );
+    }
     crearCarrera(carrera: { nombre: string; codigo?: string | null; duracion_anios?: number | null }) {
         return this.http.post<any>(this.apiUrl, carrera).pipe(
             tap((res) => {

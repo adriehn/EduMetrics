@@ -63,11 +63,11 @@
                   <button type="button" class="btn-action btn-edit" (click)="abrirModalEdicion(carrera)">
                     Editar
                   </button>
-                  <button type="button" class="btn-action btn-danger" (click)="darDeBaja(carrera)">
+                  <button type="button" class="btn-action btn-danger" (click)="solicitarCambioEstado(carrera, 'baja')">
                     Dar de baja
                   </button>
                 } @else {
-                  <button type="button" class="btn-action btn-reactivar" (click)="darDeAlta(carrera)">
+                  <button type="button" class="btn-action btn-reactivar" (click)="solicitarCambioEstado(carrera, 'alta')">
                     Reactivar
                   </button>
                 }
@@ -183,6 +183,57 @@
             </button>
           </footer>
         </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Confirmación Estado (Alta / Baja) -->
+  @if (carreraAccion(); as accion) {
+    <div class="modal-backdrop" (click)="cerrarModalConfirmacion()">
+      <div class="modal-card modal-confirm-card" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 [class.text-danger]="accion.tipo === 'baja'" [class.text-success]="accion.tipo === 'alta'">
+            {{ accion.tipo === 'alta' ? 'Reactivar Carrera' : 'Dar de Baja Carrera' }}
+          </h2>
+          <button type="button" class="btn-close" [disabled]="isProcessing()" (click)="cerrarModalConfirmacion()">✕</button>
+        </header>
+
+        @if (errorMessage()) {
+          <div class="alert-error">{{ errorMessage() }}</div>
+        }
+
+        <div class="modal-confirm-body">
+          <p>
+            ¿Confirmás que querés dar de <strong>{{ accion.tipo }}</strong> el programa 
+            <span class="highlight-carrera">"{{ accion.carrera.nombre }}"</span>?
+          </p>
+          @if (accion.tipo === 'baja') {
+            <p class="modal-confirm-hint">
+              Esta carrera ya no aparecerá disponible al crear o filtrar consultas activas. Podés volver a activarla cuando lo necesites.
+            </p>
+          } @else {
+            <p class="modal-confirm-hint">
+              El programa volverá a estar disponible inmediatamente en el formulario de registro de consultas.
+            </p>
+          }
+        </div>
+
+        <footer class="modal-actions">
+          <button 
+            type="button" 
+            class="btn-cancel" 
+            [disabled]="isProcessing()" 
+            (click)="cerrarModalConfirmacion()">
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            [class]="accion.tipo === 'alta' ? 'btn-submit-alta' : 'btn-submit-baja'" 
+            [disabled]="isProcessing()" 
+            (click)="confirmarCambioEstado()">
+            {{ isProcessing() ? 'Procesando...' : (accion.tipo === 'alta' ? 'Sí, reactivar' : 'Sí, dar de baja') }}
+          </button>
+        </footer>
       </div>
     </div>
   }

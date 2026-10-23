@@ -1,8 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Carrera, CarreraDTO } from '../../models'; 
 import { CarrerasService } from '../../services/carreras.service';
+import { Carrera, CarreraDTO, ConfirmacionCarrera } from '../../models';
+
 @Component({
   selector: 'app-carreras',
   standalone: true,
@@ -14,11 +15,20 @@ export class Carreras implements OnInit {
   carrerasService = inject(CarrerasService);
   private fb = inject(FormBuilder);
 
+  // Control de pestañas
   pestanaActiva = signal<'activas' | 'inactivas'>('activas');
+
+  // Modales de alta y edición
   mostrarModal = signal<boolean>(false);
   mostrarModalEdicion = signal<boolean>(false);
   carreraSeleccionada = signal<Carrera | null>(null);
+
+  // Modal de confirmación (Alta / Baja)
+  carreraAccion = signal<ConfirmacionCarrera | null>(null);
+
+  // Estados de carga y error
   isSubmitting = signal<boolean>(false);
+  isProcessing = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
 
   form = this.fb.group({
@@ -31,36 +41,30 @@ export class Carreras implements OnInit {
     this.cargarCarreras();
   }
 
-  cargarCarreras() {
-    const esActiva = this.pestanaActiva() === 'activas';
-    this.carrerasService.obtenerCarreras(esActiva).subscribe();
-  }
-
   cambiarPestana(pestana: 'activas' | 'inactivas') {
     this.pestanaActiva.set(pestana);
     this.cargarCarreras();
   }
 
-  darDeBaja(carrera: Carrera) {
-    if (confirm(`¿Seguro que deseás desactivar "${carrera.nombre}"? Pasará a la pestaña de Inactivas.`)) {
-      this.carrerasService.cambiarEstado(carrera.id, false).subscribe();
-    }
+  cargarCarreras() {
+    const soloActivas = this.pestanaActiva() === 'activas';
+    this.carrerasService.obtenerCarreras(soloActivas).subscribe();
   }
 
-  darDeAlta(carrera: Carrera) {
-    if (confirm(`¿Deseás reactivar "${carrera.nombre}"? Volverá a la oferta académica activa.`)) {
-      this.carrerasService.cambiarEstado(carrera.id, true).subscribe();
-    }
-  }
-
+  // --- Modal Alta ---
   abrirModal() {
-    this.form.reset();
+    this.form.reset({
+      nombre: '',
+      codigo: '',
+      duracion_anios: null
+    });
     this.errorMessage.set(null);
     this.mostrarModal.set(true);
   }
 
   cerrarModal() {
     this.mostrarModal.set(false);
+    this.errorMessage.set(null);
   }
 
   guardarCarrera() {
@@ -73,43 +77,34 @@ export class Carreras implements OnInit {
     this.errorMessage.set(null);
 
     const raw = this.form.getRawValue();
-    const duracionValue = (raw.duracion_anios != null && !isNaN(Number(raw.duracion_anios)))
-      ? Number(raw.duracion_anios)
-      : null;
-
-    const payload = {
+    const payload: CarreraDTO = {
       nombre: raw.nombre!.trim(),
       codigo: raw.codigo ? raw.codigo.trim() : null,
-      duracion_anios: duracionValue
+      duracion_anios: raw.duracion_anios ? Number(raw.duracion_anios) : null
     };
 
     this.carrerasService.crearCarrera(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.cerrarModal();
-        if (this.pestanaActiva() !== 'activas') {
-          this.cambiarPestana('activas');
-        }
+        this.cargarCarreras();
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage.set(err.error?.error || 'Error al guardar la carrera');
+        this.errorMessage.set(err.error?.error || 'Error al crear la carrera');
       }
     });
   }
 
-  // --- MÉTODOS PARA EDICIÓN ---
-
+  // --- Modal Edición ---
   abrirModalEdicion(carrera: Carrera) {
     this.carreraSeleccionada.set(carrera);
-    this.errorMessage.set(null);
-
     this.form.reset({
       nombre: carrera.nombre,
       codigo: carrera.codigo || '',
-      duracion_anios: carrera.duracion_anios ?? null
+      duracion_anios: carrera.duracion_anios || null
     });
-
+    this.errorMessage.set(null);
     this.mostrarModalEdicion.set(true);
   }
 
@@ -125,24 +120,20 @@ export class Carreras implements OnInit {
       return;
     }
 
-    const carrera = this.carreraSeleccionada();
-    if (!carrera) return;
+    const seleccionada = this.carreraSeleccionada();
+    if (!seleccionada) return;
 
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
 
     const raw = this.form.getRawValue();
-    const duracionValue = (raw.duracion_anios != null && !isNaN(Number(raw.duracion_anios)))
-      ? Number(raw.duracion_anios)
-      : null;
-
     const payload = {
       nombre: raw.nombre!.trim(),
       codigo: raw.codigo ? raw.codigo.trim() : null,
-      duracion_anios: duracionValue
+      duracion_anios: raw.duracion_anios ? Number(raw.duracion_anios) : null
     };
 
-    this.carrerasService.actualizarCarrera(carrera.id, payload).subscribe({
+    this.carrerasService.actualizarCarrera(seleccionada.id, payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.cerrarModalEdicion();
@@ -150,6 +141,40 @@ export class Carreras implements OnInit {
       error: (err) => {
         this.isSubmitting.set(false);
         this.errorMessage.set(err.error?.error || 'Error al actualizar la carrera');
+      }
+    });
+  }
+
+  // --- Modal Confirmación (Alta / Baja) ---
+  solicitarCambioEstado(carrera: Carrera, tipo: 'alta' | 'baja') {
+    this.errorMessage.set(null);
+    this.carreraAccion.set({ carrera, tipo });
+  }
+
+  cerrarModalConfirmacion() {
+    if (this.isProcessing()) return;
+    this.carreraAccion.set(null);
+    this.errorMessage.set(null);
+  }
+
+  confirmarCambioEstado() {
+    const accion = this.carreraAccion();
+    if (!accion) return;
+
+    this.isProcessing.set(true);
+    this.errorMessage.set(null);
+
+    const nuevoEstado = accion.tipo === 'alta';
+
+    this.carrerasService.cambiarEstado(accion.carrera.id, nuevoEstado).subscribe({
+      next: () => {
+        this.isProcessing.set(false);
+        this.cerrarModalConfirmacion();
+        this.cargarCarreras();
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        this.errorMessage.set(err.error?.error || `Error al dar de ${accion.tipo} la carrera`);
       }
     });
   }

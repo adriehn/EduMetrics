@@ -422,3 +422,77 @@ input:focus {
   background-color: #dcfce7;
   border-color: #86efac;
 }
+/* Modal de Confirmación Alta / Baja */
+.modal-confirm-card {
+  max-width: 440px;
+}
+
+.text-danger {
+  color: var(--color-danger, #dc2626) !important;
+}
+
+.text-success {
+  color: var(--color-accent-teal, #16a34a) !important;
+}
+
+.modal-confirm-body {
+  font-size: 0.95rem;
+  color: var(--color-text-main, #334155);
+  line-height: 1.55;
+  margin-bottom: 0.5rem;
+}
+
+.highlight-carrera {
+  font-weight: 700;
+  color: var(--color-primary-navy, #0f172a);
+}
+
+.modal-confirm-hint {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #64748b);
+  background-color: #f8fafc;
+  border-left: 3px solid var(--color-border, #cbd5e1);
+  padding: 0.6rem 0.85rem;
+  border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
+}
+
+.btn-submit-baja {
+  background-color: var(--color-danger, #dc2626);
+  border: none;
+  color: #ffffff;
+  padding: 0.65rem 1.3rem;
+  border-radius: var(--radius-sm, 6px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-submit-baja:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.btn-submit-baja:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-submit-alta {
+  background-color: var(--color-accent-teal, #16a34a);
+  border: none;
+  color: #ffffff;
+  padding: 0.65rem 1.3rem;
+  border-radius: var(--radius-sm, 6px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-submit-alta:hover:not(:disabled) {
+  background-color: var(--color-accent-teal-dark, #15803d);
+}
+
+.btn-submit-alta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

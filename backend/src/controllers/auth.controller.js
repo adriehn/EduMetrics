@@ -73,10 +73,9 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña requeridos' });
     }
 
-    // 1. Asegurar 'avatar_url' en el SELECT
     const { data: institucion, error } = await supabase
       .from('instituciones')
-      .select('id, nombre, email, password_hash, avatar_url') // <-- AGREGAR avatar_url
+      .select('id, nombre, email, password_hash, avatar_url') 
       .eq('email', email.trim().toLowerCase())
       .maybeSingle();
 
@@ -97,7 +96,6 @@ export const login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    // 2. Devolver 'avatar_url' en el objeto institucion
     return res.status(200).json({
       message: 'Inicio de sesión exitoso',
       token,
@@ -105,7 +103,7 @@ export const login = async (req, res) => {
         id: institucion.id,
         nombre: institucion.nombre,
         email: institucion.email,
-        avatar_url: institucion.avatar_url // <-- AGREGAR avatar_url AQUÍ
+        avatar_url: institucion.avatar_url 
       }
     });
   } catch (error) {
