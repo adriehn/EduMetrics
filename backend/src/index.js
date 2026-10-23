@@ -15,11 +15,8 @@ if (!process.env.JWT_SECRET) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// OBLIGATORIO en Vercel/Render para que express-rate-limit lea la IP real del cliente y no la del proxy de Vercel
 app.set('trust proxy', 1);
 
-// Orígenes permitidos (tu local y la URL que te dé Vercel para el front)
-// Orígenes permitidos (hardcodeamos la URL de producción para evitar fallos de env en Vercel)
 const allowedOrigins = [
   'http://localhost:4200',
   'https://edu-metrics-mu.vercel.app',
@@ -28,7 +25,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origin (como Postman) o desde dominios permitidos
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -41,6 +37,15 @@ app.use(cors({
 
 app.use(express.json({ limit: '10kb' }));
 
+// Ruta de prueba general para verificar que Express responde
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'EduMetrics API funcionando correctamente' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', app: 'EduMetrics' });
+});
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15,
@@ -49,20 +54,20 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Registramos las rutas con y sin el prefijo /api por seguridad ante el mapeo de Vercel
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/carreras', carrerasRoutes);
 app.use('/api/consultas', consultasRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', app: 'EduMetrics' });
-});
+// Duplicamos sin /api por si Vercel intercepta el prefijo en las Serverless Functions
+app.use('/auth', authLimiter, authRoutes);
+app.use('/carreras', carrerasRoutes);
+app.use('/consultas', consultasRoutes);
 
-// En local levanta el puerto; en Vercel se encarga la plataforma
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`EduMetrics backend corriendo en http://localhost:${PORT}`);
   });
 }
 
-// OBLIGATORIO para Vercel
 export default app;
