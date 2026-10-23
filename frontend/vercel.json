@@ -5,6 +5,14 @@
   "framework": "angular",
   "rewrites": [
     {
+      "source": "/auth/(.*)",
+      "destination": "https://edumetrics-sooty.vercel.app/auth/$1"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://edumetrics-sooty.vercel.app/api/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
