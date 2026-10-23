@@ -7,5 +7,5 @@ export const environment = {
 
 export const environment = {
   production: true,
-  apiUrl: 'https://edumetrics-sooty.vercel.app/api'
+  apiUrl: 'https://edumetrics-sooty.vercel.app'
 };
