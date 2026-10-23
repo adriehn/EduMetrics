@@ -19,14 +19,16 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
 // Orígenes permitidos (tu local y la URL que te dé Vercel para el front)
+// Orígenes permitidos (hardcodeamos la URL de producción para evitar fallos de env en Vercel)
 const allowedOrigins = [
   'http://localhost:4200',
+  'https://edu-metrics-mu.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origin (como Postman o cURL) o desde dominios permitidos
+    // Permitir requests sin origin (como Postman) o desde dominios permitidos
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
